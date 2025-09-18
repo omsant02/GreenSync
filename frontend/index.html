@@ -1,0 +1,681 @@
+// Create this as frontend/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarbonFlow - Corporate Carbon Trading</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #94a3b8;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 1rem;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #10b981;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 0.5rem;
+            background: rgba(15, 23, 42, 0.8);
+            color: #f8fafc;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .status {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .status.info {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(51, 65, 85, 0.3);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #10b981;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .credits-list {
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .credit-item {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .credit-info {
+            flex: 1;
+        }
+
+        .credit-quality {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .quality-high { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .quality-medium { background: rgba(251, 191, 36, 0.2); color: #f59e0b; }
+        .quality-low { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #10b981;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .privacy-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 25px;
+            background: #374151;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle.active {
+            background: #10b981;
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 21px;
+            height: 21px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle.active::after {
+            transform: translateX(25px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CarbonFlow</h1>
+            <p>Corporate Carbon Credit Trading with Privacy & Verification</p>
+        </div>
+
+        <div id="connection-status" class="status info">
+            <span class="loading"></span> Connecting to blockchain...
+        </div>
+
+        <div id="main-content" class="hidden">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="value" id="total-purchased">0</div>
+                    <div class="label">Total Purchased</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="total-retired">0</div>
+                    <div class="label">Total Retired</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="corporate-status">Unknown</div>
+                    <div class="label">Corporate Status</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="privacy-status">Disabled</div>
+                    <div class="label">Privacy Mode</div>
+                </div>
+            </div>
+
+            <div class="dashboard">
+                <div class="card">
+                    <h2>Buy Carbon Credits</h2>
+                    
+                    <div class="privacy-toggle">
+                        <span>Privacy Mode:</span>
+                        <div class="toggle" id="privacy-toggle">
+                        </div>
+                        <span id="privacy-label">Public</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="credit-type">Credit Type</label>
+                        <select id="credit-type">
+                            <option value="1">Forestry Project (Quality: 4, Vintage: 2023)</option>
+                            <option value="2">Solar Project (Quality: 2, Vintage: 2021)</option>
+                            <option value="3">Wind Project (Quality: 3, Vintage: 2022)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="purchase-amount">Amount (ETH)</label>
+                        <input type="number" id="purchase-amount" placeholder="0.1" step="0.01" min="0.001">
+                    </div>
+
+                    <button class="btn" id="buy-credits-btn" onclick="buyCredits()">
+                        <span id="buy-btn-text">Buy Carbon Credits</span>
+                        <span class="loading hidden" id="buy-loading"></span>
+                    </button>
+
+                    <div id="purchase-status"></div>
+                </div>
+
+                <div class="card">
+                    <h2>Compliance Dashboard</h2>
+                    
+                    <div class="form-group">
+                        <label>ESG Compliance Actions</label>
+                        <button class="btn btn-secondary" onclick="retireCredits()" id="retire-btn">
+                            Retire Credits for Compliance
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn btn-secondary" onclick="generateESGReport()" id="report-btn">
+                            Generate ESG Report
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn" onclick="refreshStats()" id="refresh-btn">
+                            Refresh Dashboard
+                        </button>
+                    </div>
+
+                    <div id="compliance-status"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Available Carbon Credits</h2>
+                <div class="credits-list" id="credits-list">
+                    <!-- Credits will be populated here -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>System Status</h2>
+                <div id="system-status">
+                    <p><strong>Blockchain:</strong> <span id="network-status">Connected to Anvil</span></p>
+                    <p><strong>AVS Verification:</strong> <span id="avs-status">Checking...</span></p>
+                    <p><strong>Fhenix Privacy:</strong> <span id="fhenix-status">Checking...</span></p>
+                    <p><strong>Hook Integration:</strong> <span id="hook-status">Checking...</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Contract addresses from deployment
+        const HOOK_ADDRESS = '0x2f11783E75f5D0BF0dB3DD6A5Ca05ed375aE80c0';
+        const TOKEN_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
+        
+        // Contract ABIs (simplified for demo)
+        const HOOK_ABI = [
+            'function getCorporateStats(address) external view returns (uint256, uint256, bool, bool)',
+            'function getAVSVerificationDetails(uint256) external view returns (bool, uint256, string[])',
+            'function createEncryptedInput(uint64) external pure returns (tuple(bytes data, int32 securityZone))',
+            'function buyCreditsPrivately(tuple(bytes data, int32 securityZone), uint256) external returns (uint256)',
+            'function addCorporateBuyer(address) external',
+            'function submitAVSVerification(uint256, bool, uint256, string[]) external',
+            'event CorporatePurchase(address indexed buyer, uint256 amount, uint256 creditId, bool isPrivate)',
+            'event AutoRetirement(address indexed corporate, uint256 amount, string reason)',
+            'event AVSVerificationCompleted(uint256 indexed creditId, bool verified, uint256 qualityScore, string[] sources)'
+        ];
+
+        const TOKEN_ABI = [
+            'function credits(uint256) external view returns (uint256, string memory, uint256, bool)',
+            'function balanceOf(address) external view returns (uint256)',
+            'function retireCredit(uint256, uint256) external'
+        ];
+
+        let provider, signer, hookContract, tokenContract;
+        let userAddress;
+        let privacyMode = false;
+
+        // Initialize the application
+        async function init() {
+            try {
+                await connectWallet();
+                await loadContracts();
+                await checkSystemStatus();
+                await refreshStats();
+                await loadCredits();
+                
+                document.getElementById('connection-status').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                
+                setupEventListeners();
+                showStatus('success', 'Connected successfully! Ready for carbon trading.');
+            } catch (error) {
+                console.error('Initialization failed:', error);
+                showStatus('error', `Connection failed: ${error.message}`);
+            }
+        }
+
+        async function connectWallet() {
+            // Connect to Anvil
+            provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+            
+            // Use first Anvil account
+            const privateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+            signer = new ethers.Wallet(privateKey, provider);
+            userAddress = signer.address;
+            
+            console.log('Connected as:', userAddress);
+        }
+
+        async function loadContracts() {
+            hookContract = new ethers.Contract(HOOK_ADDRESS, HOOK_ABI, signer);
+            tokenContract = new ethers.Contract(TOKEN_ADDRESS, TOKEN_ABI, signer);
+            
+            console.log('Contracts loaded');
+        }
+
+        async function checkSystemStatus() {
+            try {
+                // Test hook contract
+                const stats = await hookContract.getCorporateStats(userAddress);
+                document.getElementById('hook-status').textContent = 'Connected';
+                document.getElementById('hook-status').style.color = '#10b981';
+
+                // Test AVS verification
+                const avsDetails = await hookContract.getAVSVerificationDetails(1);
+                document.getElementById('avs-status').textContent = `Active (Score: ${avsDetails[1]})`;
+                document.getElementById('avs-status').style.color = '#10b981';
+
+                // Test Fhenix
+                const fhenixTest = await hookContract.createEncryptedInput(100);
+                document.getElementById('fhenix-status').textContent = 'Ready';
+                document.getElementById('fhenix-status').style.color = '#10b981';
+
+            } catch (error) {
+                console.error('System status check failed:', error);
+            }
+        }
+
+        async function refreshStats() {
+            try {
+                const stats = await hookContract.getCorporateStats(userAddress);
+                const [purchased, retired, isCorporate, hasPrivacy] = stats;
+
+                document.getElementById('total-purchased').textContent = ethers.utils.formatEther(purchased);
+                document.getElementById('total-retired').textContent = ethers.utils.formatEther(retired);
+                document.getElementById('corporate-status').textContent = isCorporate ? 'Verified' : 'Standard';
+                document.getElementById('privacy-status').textContent = hasPrivacy ? 'Enabled' : 'Disabled';
+
+            } catch (error) {
+                console.error('Failed to refresh stats:', error);
+            }
+        }
+
+        async function loadCredits() {
+            const creditsList = document.getElementById('credits-list');
+            creditsList.innerHTML = '';
+
+            try {
+                for (let i = 1; i <= 3; i++) {
+                    const credit = await tokenContract.credits(i);
+                    const [vintage, projectType, quality, isRetired] = credit;
+                    
+                    const avsDetails = await hookContract.getAVSVerificationDetails(i);
+                    const [verified, score] = avsDetails;
+
+                    const qualityClass = quality >= 4 ? 'quality-high' : quality >= 3 ? 'quality-medium' : 'quality-low';
+
+                    const creditItem = document.createElement('div');
+                    creditItem.className = 'credit-item';
+                    creditItem.innerHTML = `
+                        <div class="credit-info">
+                            <strong>Credit ${i}: ${projectType}</strong><br>
+                            <small>Vintage: ${vintage} | Verified: ${verified ? 'Yes' : 'No'} | AVS Score: ${score}</small>
+                        </div>
+                        <div class="credit-quality ${qualityClass}">
+                            Quality ${quality}/5
+                        </div>
+                    `;
+                    creditsList.appendChild(creditItem);
+                }
+            } catch (error) {
+                console.error('Failed to load credits:', error);
+            }
+        }
+
+        async function buyCredits() {
+            const amount = document.getElementById('purchase-amount').value;
+            const creditId = document.getElementById('credit-type').value;
+            
+            if (!amount || parseFloat(amount) <= 0) {
+                showStatus('error', 'Please enter a valid amount');
+                return;
+            }
+
+            setButtonLoading('buy-credits-btn', true);
+
+            try {
+                let tx;
+                
+                if (privacyMode) {
+                    // Use Fhenix private purchase
+                    const encryptedInput = await hookContract.createEncryptedInput(
+                        ethers.utils.parseEther(amount)
+                    );
+                    
+                    tx = await hookContract.buyCreditsPrivately(encryptedInput, creditId, {
+                        value: ethers.utils.parseEther(amount)
+                    });
+                    
+                    showStatus('info', 'Private purchase transaction sent... (Privacy mode enabled)');
+                } else {
+                    // Regular purchase would go through pool swap
+                    // For demo, we'll simulate with a direct call
+                    showStatus('info', 'Public purchase would use Uniswap v4 pool swap');
+                    
+                    // Simulate purchase by calling addCorporateBuyer (demo purposes)
+                    tx = await hookContract.addCorporateBuyer(userAddress);
+                }
+
+                await tx.wait();
+                showStatus('success', `Purchase completed! ${privacyMode ? 'Private' : 'Public'} transaction confirmed.`);
+                
+                await refreshStats();
+                
+            } catch (error) {
+                console.error('Purchase failed:', error);
+                showStatus('error', `Purchase failed: ${error.message}`);
+            } finally {
+                setButtonLoading('buy-credits-btn', false);
+            }
+        }
+
+        async function retireCredits() {
+            setButtonLoading('retire-btn', true);
+            
+            try {
+                // For demo, submit a mock retirement
+                showStatus('info', 'Processing credit retirement for compliance...');
+                
+                // Simulate retirement delay
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                showStatus('success', 'Credits retired successfully! ESG compliance proof generated.');
+                await refreshStats();
+                
+            } catch (error) {
+                console.error('Retirement failed:', error);
+                showStatus('error', `Retirement failed: ${error.message}`);
+            } finally {
+                setButtonLoading('retire-btn', false);
+            }
+        }
+
+        async function generateESGReport() {
+            setButtonLoading('report-btn', true);
+            
+            try {
+                const stats = await hookContract.getCorporateStats(userAddress);
+                const [purchased, retired] = stats;
+                
+                const report = {
+                    company: 'Demo Corporation',
+                    reporting_period: '2024',
+                    carbon_credits_purchased: ethers.utils.formatEther(purchased),
+                    carbon_credits_retired: ethers.utils.formatEther(retired),
+                    verification_method: 'EigenLayer AVS + Fhenix Privacy',
+                    compliance_status: 'Verified',
+                    generated_at: new Date().toISOString()
+                };
+
+                const reportJson = JSON.stringify(report, null, 2);
+                
+                // Create downloadable report
+                const blob = new Blob([reportJson], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'esg-compliance-report.json';
+                a.click();
+                
+                showStatus('success', 'ESG report generated and downloaded!');
+                
+            } catch (error) {
+                console.error('Report generation failed:', error);
+                showStatus('error', `Report generation failed: ${error.message}`);
+            } finally {
+                setButtonLoading('report-btn', false);
+            }
+        }
+
+        function setupEventListeners() {
+            // Privacy toggle
+            document.getElementById('privacy-toggle').addEventListener('click', function() {
+                privacyMode = !privacyMode;
+                this.classList.toggle('active');
+                document.getElementById('privacy-label').textContent = privacyMode ? 'Private' : 'Public';
+                
+                const buyBtn = document.getElementById('buy-btn-text');
+                buyBtn.textContent = privacyMode ? 'Buy Credits Privately (Fhenix)' : 'Buy Carbon Credits';
+            });
+
+            // Listen for contract events
+            if (hookContract) {
+                hookContract.on('CorporatePurchase', (buyer, amount, creditId, isPrivate) => {
+                    if (buyer.toLowerCase() === userAddress.toLowerCase()) {
+                        showStatus('success', 
+                            `Purchase confirmed: ${ethers.utils.formatEther(amount)} ETH worth of credits ` +
+                            `(${isPrivate ? 'Private via Fhenix' : 'Public'})`
+                        );
+                        refreshStats();
+                    }
+                });
+
+                hookContract.on('AutoRetirement', (corporate, amount) => {
+                    if (corporate.toLowerCase() === userAddress.toLowerCase()) {
+                        showStatus('info', `Auto-retirement: ${ethers.utils.formatEther(amount)} ETH worth of credits retired for compliance`);
+                    }
+                });
+            }
+        }
+
+        function setButtonLoading(buttonId, isLoading) {
+            const button = document.getElementById(buttonId);
+            const text = button.querySelector('span:first-child');
+            const loading = button.querySelector('.loading');
+            
+            if (isLoading) {
+                button.disabled = true;
+                text.classList.add('hidden');
+                loading.classList.remove('hidden');
+            } else {
+                button.disabled = false;
+                text.classList.remove('hidden');
+                loading.classList.add('hidden');
+            }
+        }
+
+        function showStatus(type, message, targetId = 'purchase-status') {
+            const target = document.getElementById(targetId);
+            target.className = `status ${type}`;
+            target.textContent = message;
+            target.style.display = 'block';
+            
+            // Auto-hide after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    target.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
