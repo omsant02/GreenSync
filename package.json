@@ -1,0 +1,27 @@
+{
+  "name": "carbonflow",
+  "version": "1.0.0",
+  "description": "**A template for writing Uniswap v4 Hooks 🦄**",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omsant02/GreenSync.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/omsant02/GreenSync/issues"
+  },
+  "homepage": "https://github.com/omsant02/GreenSync#readme",
+  "dependencies": {
+    "@fhenixprotocol/contracts": "^0.3.1"
+  }
+}
