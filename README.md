@@ -4,6 +4,9 @@
 
 A decentralized carbon credit trading platform built on Uniswap v4, integrating Fhenix privacy encryption and EigenLayer AVS verification to solve critical issues in the $2B+ carbon credit market.
 
+<img width="1676" height="794" alt="image" src="https://github.com/user-attachments/assets/59576352-e12b-40d9-af5f-38321086812f" />
+
+
 ## Problem Statement
 
 The corporate carbon credit market faces three critical challenges:
