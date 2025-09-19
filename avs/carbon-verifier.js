@@ -26,12 +26,22 @@ class CarbonVerificationAVS {
             'event AVSVerificationRequested(uint256 indexed creditId, address requester)',
             'function submitAVSVerification(uint256 creditId, bool isVerified, uint256 qualityScore, string[] memory sources) external',
             'function avsVerified(uint256) external view returns (bool)',
-            'function avsQualityScore(uint256) external view returns (uint256)'
+            'function avsQualityScore(uint256) external view returns (uint256)',
+            'function getCorporateStats(address) external view returns (uint256, uint256, bool, bool)',
+            'function getAVSVerificationDetails(uint256) external view returns (bool, uint256, string[])'
         ];
     }
 
     async initialize() {
         console.log('🚀 Initializing Carbon Verification AVS...');
+        
+        // Check environment variables
+        if (!process.env.HOOK_CONTRACT_ADDRESS) {
+            console.error('❌ HOOK_CONTRACT_ADDRESS not found in .env file');
+            console.log('Please set HOOK_CONTRACT_ADDRESS in avs/.env file');
+            console.log('Get it from deployment output or use: 0x2f11783E75f5D0BF0dB3DD6A5Ca05ed375aE80c0');
+            process.exit(1);
+        }
         
         // Connect to blockchain
         this.provider = new ethers.JsonRpcProvider(
@@ -45,13 +55,32 @@ class CarbonVerificationAVS {
         
         // Connect to CarbonFlowHook contract
         this.hookContract = new ethers.Contract(
-            process.env.HOOK_CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+            process.env.HOOK_CONTRACT_ADDRESS,
             this.contractABI,
             this.wallet
         );
         
         console.log(`📋 Connected to contract: ${this.hookContract.target}`);
         console.log(`🔑 AVS Operator address: ${this.wallet.address}`);
+        
+        // Test contract connection
+        try {
+            console.log('🧪 Testing contract connection...');
+            const testCall = await this.hookContract.getCorporateStats(this.wallet.address);
+            console.log('✅ Contract connection successful');
+            
+            // Test AVS functions
+            const avsDetails = await this.hookContract.getAVSVerificationDetails(1);
+            console.log('✅ AVS functions working');
+            console.log(`📊 Credit 1 status: Verified=${avsDetails[0]}, Score=${avsDetails[1]}`);
+        } catch (error) {
+            console.error('❌ Contract connection failed:', error.message);
+            console.log('🔍 Debug info:');
+            console.log(`   Contract: ${process.env.HOOK_CONTRACT_ADDRESS}`);
+            console.log(`   RPC: ${process.env.RPC_URL || 'http://localhost:8545'}`);
+            console.log('   Make sure Anvil is running and contracts are deployed');
+            process.exit(1);
+        }
         
         // Start listening for verification requests
         this.startListening();
@@ -78,12 +107,20 @@ class CarbonVerificationAVS {
             }
         });
         
-        // Handle disconnections
+        // Handle disconnections with better error handling
         this.provider.on('error', (error) => {
             console.error('🔌 Provider error:', error);
-            console.log('🔄 Attempting to reconnect...');
-            setTimeout(() => this.initialize(), 5000);
+            console.log('🔄 Attempting to reconnect in 5 seconds...');
+            setTimeout(() => {
+                console.log('🔄 Reconnecting...');
+                this.initialize().catch(console.error);
+            }, 5000);
         });
+
+        // Heartbeat to show service is alive
+        setInterval(() => {
+            console.log(`💓 AVS Service alive - listening on ${process.env.HOOK_CONTRACT_ADDRESS}`);
+        }, 30000);
     }
 
     async processVerificationRequest(creditId, requester) {
@@ -171,6 +208,17 @@ class CarbonVerificationAVS {
                     quality: 70,
                     isRetired: false,
                     lastUpdated: '2023-12-10'
+                },
+                'VCS-11111': {
+                    exists: true,
+                    status: 'active',
+                    vintage: 2022,
+                    projectType: 'Wind Energy',
+                    methodology: 'ACM0002',
+                    location: 'Texas, USA',
+                    quality: 75,
+                    isRetired: false,
+                    lastUpdated: '2024-02-10'
                 }
             };
             
@@ -232,6 +280,16 @@ class CarbonVerificationAVS {
                     location: 'Ghana',
                     quality: 75,
                     isRetired: true
+                },
+                'GS-003': {
+                    exists: true,
+                    status: 'registered',
+                    vintage: 2022,
+                    projectType: 'Wind Energy',
+                    sdgImpacts: ['SDG 7', 'SDG 13'],
+                    location: 'Morocco',
+                    quality: 78,
+                    isRetired: false
                 }
             };
             
@@ -280,6 +338,26 @@ class CarbonVerificationAVS {
                     protocol: 'Forest Project Protocol',
                     location: 'California, USA',
                     quality: 78,
+                    isRetired: false
+                },
+                'CAR-456': {
+                    exists: true,
+                    status: 'issued',
+                    vintage: 2021,
+                    projectType: 'Solar',
+                    protocol: 'Solar Project Protocol',
+                    location: 'Arizona, USA',
+                    quality: 65,
+                    isRetired: false
+                },
+                'CAR-123': {
+                    exists: true,
+                    status: 'issued',
+                    vintage: 2022,
+                    projectType: 'Wind',
+                    protocol: 'Wind Project Protocol',
+                    location: 'Oklahoma, USA',
+                    quality: 72,
                     isRetired: false
                 }
             };
@@ -373,7 +451,8 @@ class CarbonVerificationAVS {
                 creditId,
                 isValid,
                 qualityScore,
-                sources
+                sources,
+                { gasLimit: 300000 } // Add gas limit for reliability
             );
             
             console.log(`⛓️ Transaction sent: ${tx.hash}`);
@@ -383,7 +462,8 @@ class CarbonVerificationAVS {
             
         } catch (error) {
             console.error('❌ Failed to submit verification:', error.message);
-            throw error;
+            // Don't throw - let service continue running
+            console.log('🔄 Service will continue for next verification requests');
         }
     }
 
@@ -401,7 +481,11 @@ async function main() {
     try {
         await avs.initialize();
     } catch (error) {
-        console.error('💥 Failed to initialize AVS:', error);
+        console.error('💥 Failed to initialize AVS:', error.message);
+        console.log('\n🔧 Troubleshooting:');
+        console.log('1. Make sure Anvil is running: anvil --code-size-limit 30000');
+        console.log('2. Make sure contracts are deployed');
+        console.log('3. Check avs/.env has correct HOOK_CONTRACT_ADDRESS');
         process.exit(1);
     }
     

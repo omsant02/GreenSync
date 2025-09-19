@@ -82,5 +82,8 @@ contract DeployReal is Script {
         
         console.log("Update AVS .env with:");
         console.log(string(abi.encodePacked("HOOK_CONTRACT_ADDRESS=", vm.toString(address(hook)))));
+        
+        // Add this line for auto-script parsing
+        console.log("HOOK_CONTRACT_ADDRESS=", vm.toString(address(hook)));
     }
 }
