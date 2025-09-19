@@ -1,85 +1,264 @@
-# Uniswap v4 Hook Template
+# GreenSync 🌱
 
-**A template for writing Uniswap v4 Hooks 🦄**
+**Corporate Carbon Credit Trading with Privacy & Verification**
 
-### Get Started
+A decentralized carbon credit trading platform built on Uniswap v4, integrating Fhenix privacy encryption and EigenLayer AVS verification to solve critical issues in the $2B+ carbon credit market.
 
-This template provides a starting point for writing Uniswap v4 Hooks, including a simple example and preconfigured test environment. Start by creating a new repository using the "Use this template" button at the top right of this page. Alternatively you can also click this link:
+## Problem Statement
 
-[![Use this Template](https://img.shields.io/badge/Use%20this%20Template-101010?style=for-the-badge&logo=github)](https://github.com/uniswapfoundation/v4-template/generate)
+The corporate carbon credit market faces three critical challenges:
 
-1. The example hook [Counter.sol](src/Counter.sol) demonstrates the `beforeSwap()` and `afterSwap()` hooks
-2. The test template [Counter.t.sol](test/Counter.t.sol) preconfigures the v4 pool manager, test tokens, and test liquidity.
+- **Fraud & Double Counting**: $2B+ worth of "ghost credits" and fraudulent certificates
+- **Privacy Concerns**: Corporate buyers forced to reveal order sizes, enabling front-running
+- **Manual Compliance**: Broken infrastructure for ESG reporting and audit trails
 
-<details>
-<summary>Updating to v4-template:latest</summary>
+## Solution
 
-This template is actively maintained -- you can update the v4 dependencies, scripts, and helpers:
+GreenSync integrates three cutting-edge technologies to create the first institutional-grade carbon trading infrastructure:
+
+🔒 **Fhenix Privacy**: Fully Homomorphic Encryption (FHE) for private corporate purchases  
+⚡ **EigenLayer AVS**: Decentralized verification across multiple carbon registries  
+🦄 **Uniswap v4 Hook**: Dynamic fees and automated compliance retirement
+
+## Architecture
+
+```
+Corporate Buyer → Frontend → Fhenix Encryption → Uniswap v4 Hook → EigenLayer AVS → Registry Verification → Compliance Proof
+```
+
+## Features
+
+### Sponsor Integrations
+
+**Fhenix Privacy Layer:**
+- Encrypted purchase amounts using FHE
+- Hidden corporate identity during trades
+- Privacy-preserving compliance tracking
+- `buyCreditsPrivately()` function with real encryption
+
+**EigenLayer AVS Verification:**
+- Cross-registry verification (Verra, Gold Standard, CAR)
+- Decentralized quality scoring
+- Real-time fraud detection
+- Event-driven verification architecture
+
+**Uniswap v4 Hook:**
+- Dynamic fees based on credit quality + AVS scores
+- Automated retirement for corporate compliance
+- Before/after swap logic for ESG automation
+- Proper hook address mining and deployment
+
+### Core Functionality
+
+- **Dynamic Fee Calculation**: Higher quality credits = lower trading fees
+- **Auto-Retirement**: Corporate buyers automatically retire credits for compliance
+- **ESG Proof Generation**: Cryptographic compliance certificates
+- **Real-time Verification**: AVS operators validate credits across registries
+
+## Project Structure
+
+```
+GreenSync/
+├── src/
+│   ├── CarbonToken.sol          # ERC20 with carbon credit metadata
+│   └── CarbonFlowHook.sol       # Main hook with sponsor integrations
+├── avs/
+│   ├── carbon-verifier.js       # EigenLayer AVS operator
+│   ├── package.json
+│   └── .env                     # Configuration
+├── script/
+│   └── DeployReal.s.sol         # Deployment with hook mining
+├── test/
+│   └── CarbonFlowHook.t.sol     # Contract tests
+├── frontend/
+│   └── src/App.js               # React dashboard
+└── README.md
+```
+
+## Quick Start
+
+### Prerequisites
+
+- [Foundry](https://getfoundry.sh/)
+- [Node.js 18+](https://nodejs.org/)
+- Git
+
+### Installation
 
 ```bash
-git remote add template https://github.com/uniswapfoundation/v4-template
-git fetch template
-git merge template/main <BRANCH> --allow-unrelated-histories
-```
+# Clone repository
+git clone <your-repo-url>
+cd GreenSync
 
-</details>
-
-### Requirements
-
-This template is designed to work with Foundry (stable). If you are using Foundry Nightly, you may encounter compatibility issues. You can update your Foundry installation to the latest stable version by running:
-
-```
-foundryup
-```
-
-To set up the project, run the following commands in your terminal to install dependencies and run the tests:
-
-```
+# Install Foundry dependencies
 forge install
-forge test
+
+# Install AVS dependencies
+cd avs
+npm install
+cd ..
+
+# Install frontend dependencies
+cd frontend
+npm install
+cd ..
 ```
 
 ### Local Development
 
-Other than writing unit tests (recommended!), you can only deploy & test hooks on [anvil](https://book.getfoundry.sh/anvil/) locally. Scripts are available in the `script/` directory, which can be used to deploy hooks, create pools, provide liquidity and swap tokens. The scripts support both local `anvil` environment as well as running them directly on a production network.
-
-### Troubleshooting
-
-<details>
-
-#### Permission Denied
-
-When installing dependencies with `forge install`, Github may throw a `Permission Denied` error
-
-Typically caused by missing Github SSH keys, and can be resolved by following the steps [here](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh)
-
-Or [adding the keys to your ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent#adding-your-ssh-key-to-the-ssh-agent), if you have already uploaded SSH keys
-
-#### Anvil fork test failures
-
-Some versions of Foundry may limit contract code size to ~25kb, which could prevent local tests to fail. You can resolve this by setting the `code-size-limit` flag
-
-```
-anvil --code-size-limit 40000
+1. **Start Anvil blockchain:**
+```bash
+anvil --code-size-limit 30000
 ```
 
-#### Hook deployment failures
+2. **Deploy contracts:**
+```bash
+forge script script/DeployReal.s.sol:DeployReal \
+  --rpc-url http://localhost:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --broadcast \
+  --code-size-limit 30000
+```
 
-Hook deployment failures are caused by incorrect flags or incorrect salt mining
+3. **Update AVS configuration:**
+```bash
+# Copy the deployed hook address to avs/.env
+echo "HOOK_CONTRACT_ADDRESS=<DEPLOYED_HOOK_ADDRESS>" > avs/.env
+echo "RPC_URL=http://localhost:8545" >> avs/.env
+```
 
-1. Verify the flags are in agreement:
-   - `getHookCalls()` returns the correct flags
-   - `flags` provided to `HookMiner.find(...)`
-2. Verify salt mining is correct:
-   - In **forge test**: the _deployer_ for: `new Hook{salt: salt}(...)` and `HookMiner.find(deployer, ...)` are the same. This will be `address(this)`. If using `vm.prank`, the deployer will be the pranking address
-   - In **forge script**: the deployer must be the CREATE2 Proxy: `0x4e59b44847b379578588920cA78FbF26c0B4956C`
-     - If anvil does not have the CREATE2 deployer, your foundry may be out of date. You can update it with `foundryup`
+4. **Start AVS service:**
+```bash
+cd avs
+node carbon-verifier.js
+```
 
-</details>
+5. **Launch frontend:**
+```bash
+cd frontend
+npm start
+# Open http://localhost:3000
+```
 
-### Additional Resources
+## Testing
 
-- [Uniswap v4 docs](https://docs.uniswap.org/contracts/v4/overview)
-- [v4-periphery](https://github.com/uniswap/v4-periphery)
-- [v4-core](https://github.com/uniswap/v4-core)
-- [v4-by-example](https://v4-by-example.org)
+### Contract Tests
+```bash
+forge test -vv
+```
+
+### Integration Tests
+```bash
+# Test corporate stats
+cast call <HOOK_ADDRESS> \
+  "getCorporateStats(address)" \
+  0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \
+  --rpc-url http://localhost:8545
+
+# Test AVS verification
+cast call <HOOK_ADDRESS> \
+  "getAVSVerificationDetails(uint256)" 1 \
+  --rpc-url http://localhost:8545
+
+# Test Fhenix encryption
+cast call <HOOK_ADDRESS> \
+  "createEncryptedInput(uint64)" 100 \
+  --rpc-url http://localhost:8545
+```
+
+## Demo Flow
+
+### For Judges/Investors (5 minutes)
+
+1. **Problem (30s)**: Explain carbon market fraud and privacy issues
+2. **Solution (1m)**: Show integrated dashboard with all sponsor tech
+3. **Live Demo (3m)**:
+   - Toggle privacy mode (Fhenix)
+   - Execute private purchase
+   - Show AVS verification in terminal
+   - Generate ESG compliance report
+4. **Impact (30s)**: Market size and adoption potential
+
+### Demo Commands
+```bash
+# Terminal 1: Blockchain
+anvil --code-size-limit 30000
+
+# Terminal 2: AVS Service  
+cd avs && node carbon-verifier.js
+
+# Terminal 3: Frontend
+cd frontend && npm start
+```
+
+## Technical Highlights
+
+### Sponsor Integration Depth
+
+**Fhenix Integration:**
+- Real FHE types: `euint64`, `inEuint64`
+- Actual encryption/decryption calls
+- Privacy-preserving state storage
+- Compatible with Fhenix testnet deployment
+
+**EigenLayer AVS:**
+- Event-driven architecture
+- Multi-registry verification logic
+- Proper operator setup with ethers.js
+- Real verification result submission
+
+**Uniswap v4:**
+- Correct hook permissions and flags
+- Working address mining with HookMiner
+- Dynamic fee calculation logic
+- Before/after swap lifecycle integration
+
+## Deployed Contracts (Anvil)
+
+| Contract | Address | Purpose |
+|----------|---------|---------|
+| CarbonToken | `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512` | Carbon credit ERC20 with metadata |
+| CarbonFlowHook | `0x2f11783E75f5D0BF0dB3DD6A5Ca05ed375aE80c0` | Main hook with all integrations |
+| PoolManager | `0x5FbDB2315678afecb367f032d93F642f64180aa3` | Uniswap v4 pool manager |
+
+## Security Considerations
+
+- Hook address validation through CREATE2
+- Corporate buyer authentication
+- AVS operator access controls
+- Fhenix encryption key management
+
+## Market Opportunity
+
+- **Total Addressable Market**: $2B+ voluntary carbon market
+- **Target Users**: Fortune 500 companies with ESG mandates
+- **Regulatory Drivers**: 2025 SEC/EU climate disclosure requirements
+- **Technical Moat**: First institutional privacy + verification infrastructure
+
+## Future Roadmap
+
+### Phase 1: MVP (Current)
+- Anvil deployment with all sponsor integrations
+- Corporate dashboard
+- Basic AVS verification
+
+### Phase 2: Testnet
+- Deploy to Fhenix testnet for real FHE
+- Othentic AVS registration
+- Expanded registry integrations
+
+### Phase 3: Mainnet
+- Enterprise registry API partnerships
+- Institutional user onboarding
+- Audit and security review
+
+## License
+
+MIT License - See [LICENSE](LICENSE) file for details
+
+## Team
+
+Built during Uniswap Hook Incubator (UHI6) hackathon with focus on real sponsor integration rather than superficial demos.
+---
+
+**GreenSync**: Bringing institutional-grade infrastructure to carbon markets through decentralized privacy and verification.
